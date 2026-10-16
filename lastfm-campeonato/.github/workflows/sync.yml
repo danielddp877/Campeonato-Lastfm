@@ -1,7 +1,7 @@
 name: actualizar-y-publicar
 on:
-  schedule: [{cron: "30 5 * * *"}]   # cada día
-  workflow_dispatch:                 # botón "Run workflow" para lanzarlo a mano
+  schedule: [{cron: "30 5 * * *"}]
+  workflow_dispatch:
 permissions:
   contents: write
   pages: write
@@ -10,6 +10,9 @@ concurrency: {group: pages, cancel-in-progress: false}
 jobs:
   build:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: lastfm-campeonato
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -31,7 +34,7 @@ jobs:
           mkdir -p publico && cp web/index.html publico/index.html
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
-        with: {path: publico}
+        with: {path: lastfm-campeonato/publico}
   deploy:
     needs: build
     runs-on: ubuntu-latest
