@@ -1,0 +1,543 @@
+<title>Campeonato Last.fm</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Concepto: pantalla de cronometraje. El chrome es monocromo; el color pertenece a los artistas y los acompaña en todas las vistas. */
+:root{
+  --bg:#f2f1ed; --surface:#fbfaf8; --surface2:#e9e7e1; --line:#d6d3ca;
+  --ink:#121315; --ink2:#4b4943; --ink3:#6f6c64;
+  --inv:#fbfaf8; --invbg:#121315;
+  --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --s4:#eda100; --s5:#e87ba4; --s6:#008300; --s7:#6250d6; --s8:#e34948; --s9:#0e98a8; --s10:#8a9a1a; --s11:#9a6b48; --s12:#b043b8; --s13:#5d6f8f; --s14:#c4a000; --sx:#8d8b84;
+  --display:'Archivo','Arial Narrow',Arial,sans-serif; --body:'Archivo',system-ui,sans-serif; --mono:'IBM Plex Mono',ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0c0d0f; --surface:#15171a; --surface2:#1d2024; --line:#2b2e34;
+  --ink:#f1efe9; --ink2:#b9b6ac; --ink3:#8a877e;
+  --inv:#0c0d0f; --invbg:#f1efe9;
+  --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500; --s5:#d55181; --s6:#008300; --s7:#9085e9; --s8:#e66767; --s9:#2bb8c9; --s10:#a5b72e; --s11:#b58660; --s12:#c963d1; --s13:#8ea0c2; --s14:#d9bc2b; --sx:#8f9096; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0c0d0f; --surface:#15171a; --surface2:#1d2024; --line:#2b2e34;
+  --ink:#f1efe9; --ink2:#b9b6ac; --ink3:#8a877e;
+  --inv:#0c0d0f; --invbg:#f1efe9;
+  --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500; --s5:#d55181; --s6:#008300; --s7:#9085e9; --s8:#e66767; --s9:#2bb8c9; --s10:#a5b72e; --s11:#b58660; --s12:#c963d1; --s13:#8ea0c2; --s14:#d9bc2b; --sx:#8f9096; color-scheme:dark}
+
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.45;font-variant-numeric:tabular-nums;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;padding:0}
+:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+.wrap{max-width:1100px;margin:0 auto}
+.disp{font-family:var(--display);font-stretch:62%;font-weight:800;text-transform:uppercase;letter-spacing:.01em;line-height:.95}
+.mono{font-family:var(--mono)}
+.lab{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3)}
+
+header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--bg);border-bottom:1px solid var(--line);margin:0 calc(-1*max(16px,env(safe-area-inset-left,0px)));padding:10px max(16px,env(safe-area-inset-right,0px)) 0 max(16px,env(safe-area-inset-left,0px))}
+.bar{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.brand{display:flex;flex-direction:column;gap:2px;padding-bottom:8px}
+.brand b{font-size:26px}
+.nav{display:flex;gap:2px;overflow-x:auto;scrollbar-width:none}
+.nav button{padding:10px 14px;font-family:var(--display);font-stretch:75%;font-weight:700;font-size:15px;text-transform:uppercase;letter-spacing:.04em;color:var(--ink3);border-bottom:3px solid transparent;white-space:nowrap}
+.nav button[aria-selected="true"]{color:var(--ink);border-color:var(--ink)}
+.nav button:hover{color:var(--ink)}
+.seasons{display:flex;gap:6px;flex-wrap:wrap;padding:12px 0}
+.seasons button{padding:6px 14px;border:1px solid var(--line);border-radius:999px;font-family:var(--mono);font-size:13px;color:var(--ink2)}
+.seasons button[aria-pressed="true"]{background:var(--invbg);color:var(--inv);border-color:var(--invbg)}
+.seasons button:not([aria-pressed="true"]):hover{border-color:var(--ink)}
+
+main{padding-block:22px 40px;display:flex;flex-direction:column;gap:34px}
+section{display:flex;flex-direction:column;gap:14px;min-width:0}
+h2{margin:0;font-size:30px}
+.sub{color:var(--ink3);font-size:13px;margin:0}
+.head{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap}
+
+.dot{display:inline-block;width:10px;height:10px;border-radius:50%;flex:none}
+.hero{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:14px}
+.lead{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:22px;display:flex;flex-direction:column;gap:12px;position:relative;overflow:hidden;min-width:0}
+.lead .stripe{position:absolute;left:0;top:0;bottom:0;width:6px}
+.lead .nm{font-size:clamp(40px,8vw,76px);overflow-wrap:anywhere}
+.lead .row{display:flex;gap:28px;flex-wrap:wrap}
+.big{font-family:var(--display);font-stretch:62%;font-weight:800;font-size:44px;line-height:1}
+.kpis{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line);border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.kpi{background:var(--surface);padding:14px 16px;display:flex;flex-direction:column;gap:4px;min-width:0}
+.kpi .big{font-size:34px}
+.kpi small{color:var(--ink3);font-size:12px;line-height:1.3}
+.pill{display:inline-block;font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;padding:3px 8px;border-radius:3px;border:1px solid var(--line);color:var(--ink2)}
+.pill.inv{background:var(--invbg);color:var(--inv);border-color:var(--invbg)}
+
+.tw{overflow-x:auto;border:1px solid var(--line);border-radius:6px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3);font-weight:400;text-align:right;padding:10px 12px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:9px 12px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+tr:last-child td{border-bottom:0}
+th:nth-child(2),td:nth-child(2){text-align:left}
+th:first-child,td:first-child{text-align:center;width:46px}
+tbody tr.click{cursor:pointer}
+tbody tr.click:hover td{background:var(--surface2)}
+tr.out td{color:var(--ink2)}
+tr.sepr td{text-align:left!important;width:auto!important;background:var(--surface2);font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink3);padding:6px 12px}
+.pos{font-family:var(--display);font-stretch:62%;font-weight:800;font-size:20px}
+.who{display:flex;align-items:center;gap:10px;font-weight:600;min-width:0}
+.who span.t{overflow:hidden;text-overflow:ellipsis}
+.pbar{display:flex;align-items:center;gap:10px;justify-content:flex-end}
+.pbar i{display:block;height:6px;border-radius:0 3px 3px 0;min-width:2px}
+.pbar b{font-family:var(--display);font-stretch:75%;font-size:20px;min-width:44px;text-align:right}
+td.mut{color:var(--ink2)}
+.tie{font-family:var(--mono);font-size:11px;border:1px solid var(--line);border-radius:3px;padding:1px 5px;color:var(--ink2);cursor:help}
+
+.chartbox{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:14px;position:relative;min-width:0}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;margin-bottom:10px}
+.legend button{display:flex;align-items:center;gap:7px;font-size:13px;color:var(--ink2);padding:2px 0}
+.legend button i{display:block;width:16px;height:3px;border-radius:2px}
+.legend button[aria-pressed="false"]{opacity:.35}
+.legend button:hover{color:var(--ink)}
+svg text{font-family:var(--mono);font-size:11px;fill:var(--ink3)}
+svg .ds{fill:var(--ink2);font-family:var(--body);font-weight:600;font-size:12px}
+.tip{position:absolute;pointer-events:none;background:var(--invbg);color:var(--inv);border-radius:5px;padding:9px 11px;font-size:12px;min-width:170px;box-shadow:0 6px 24px rgba(0,0,0,.28);z-index:5}
+.tip b{display:block;font-family:var(--display);font-stretch:75%;font-size:15px;text-transform:uppercase;margin-bottom:5px}
+.tip div{display:flex;justify-content:space-between;gap:14px;line-height:1.55}
+.tip .dot{margin-right:6px}
+.linkbtn{font-family:var(--mono);font-size:12px;color:var(--ink2);text-decoration:underline;text-underline-offset:3px}
+.linkbtn:hover{color:var(--ink)}
+
+.cal{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.gp{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:12px;text-align:left;display:flex;flex-direction:column;gap:6px;min-width:0;border-top:4px solid var(--c)}
+.gp:hover{background:var(--surface2)}
+.gp .m{font-family:var(--display);font-stretch:75%;font-weight:700;font-size:15px;text-transform:uppercase;display:flex;justify-content:space-between;gap:6px}
+.gp .w{font-weight:600;font-size:14px;overflow-wrap:anywhere;line-height:1.2}
+.gp .e{font-family:var(--mono);font-size:12px;color:var(--ink3)}
+
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chips button{padding:6px 11px;border:1px solid var(--line);border-radius:4px;font-family:var(--mono);font-size:12px;color:var(--ink2);background:var(--surface);display:flex;gap:7px;align-items:center}
+.chips button[aria-pressed="true"]{background:var(--invbg);color:var(--inv);border-color:var(--invbg)}
+.chips button:not([aria-pressed="true"]):hover{border-color:var(--ink)}
+.navgp{display:flex;gap:8px}
+.navgp button{border:1px solid var(--line);border-radius:4px;padding:6px 12px;font-family:var(--mono);font-size:12px;background:var(--surface)}
+.navgp button:disabled{opacity:.35;cursor:default}
+.pl{display:flex;align-items:center;gap:10px;justify-content:flex-end}
+.pl i{display:block;height:6px;border-radius:0 3px 3px 0}
+
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:16px;display:flex;flex-direction:column;gap:6px;border-top:4px solid var(--c);min-width:0}
+.card .y{font-family:var(--mono);font-size:12px;color:var(--ink3)}
+.card .n{font-size:30px;overflow-wrap:anywhere}
+.rec{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:10px}
+.rec .r{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:14px 16px;display:flex;flex-direction:column;gap:3px;min-width:0}
+.rec .v{font-family:var(--display);font-stretch:62%;font-weight:800;font-size:34px;line-height:1.05}
+.rec .d{font-size:13px;color:var(--ink2)}
+
+.strip{display:grid;grid-template-columns:repeat(auto-fill,minmax(46px,1fr));gap:4px}
+.cell{border-radius:4px;background:var(--c,var(--surface2));color:#fff;height:46px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:var(--mono);font-size:11px;line-height:1.15;font-weight:500;text-shadow:0 1px 2px rgba(0,0,0,.35)}
+.cell small{font-size:9px;opacity:.85}
+.cell.p{background:#a98be0;color:#1d0f33;text-shadow:none}
+.cell.p small{opacity:.75}
+.cell.empty{background:transparent;border:1px dashed var(--line);color:var(--ink3);text-shadow:none}
+.cell.s{background:var(--c)}
+.cell.t{background:var(--surface2);color:var(--ink);text-shadow:none}
+.cell.fade{outline:0}
+:root{--m1:#c9a24b;--m2:#cfd3d8;--m3:#b27a4e;--mp:#b9dfb9;--mx:#a98be0}
+.pbars{display:grid;grid-template-columns:repeat(20,minmax(0,1fr));gap:4px;height:170px;align-items:end;padding:4px 0}
+.pb{display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:16px 1fr auto;height:100%;min-width:0;justify-items:stretch}
+.pb .b{display:block;width:100%;border-radius:3px 3px 0 0}
+.pb .v{text-align:center;font-family:var(--mono);font-size:11px;color:var(--ink2);height:16px;line-height:16px}
+.pb .x{font-family:var(--mono);font-size:10px;color:var(--ink3);margin-top:4px;border-top:1px solid var(--line);width:100%;text-align:center;padding-top:3px}
+.pb .b{align-self:end}
+@media(max-width:600px){.pbars{gap:2px;height:140px}.pb .v,.pb .x{font-size:9px}}
+.ext td,.ext th{white-space:nowrap}
+.ext .tw,.tw:has(.ext){overflow-x:auto}
+.cell.m1{background:#c9a24b;color:#2b2208;text-shadow:none}
+.cell.m2{background:#cfd3d8;color:#20242a;text-shadow:none}
+.cell.m3{background:#b27a4e;color:#fff;text-shadow:none}
+.cell.m1 small,.cell.m2 small{opacity:.75}
+.cell.pt{background:#b9dfb9;color:#16301a;text-shadow:none}
+.cell.pt small{opacity:.75}
+.yl{font-family:var(--mono);font-size:11px;color:var(--ink3);margin:8px 0 2px;letter-spacing:.08em}
+
+.split{display:grid;grid-template-columns:minmax(0,300px) minmax(0,1fr);gap:16px;align-items:start}
+.alist{position:relative;display:flex;flex-direction:column;border:1px solid var(--line);border-radius:6px;background:var(--surface);max-height:640px;overflow-y:auto}
+.alist button{display:flex;align-items:center;gap:10px;padding:9px 12px;border-bottom:1px solid var(--line);text-align:left;font-size:14px}
+.alist button:last-child{border-bottom:0}
+.alist button:hover{background:var(--surface2)}
+.alist button[aria-current="true"]{background:var(--invbg);color:var(--inv)}
+.alist button span.t{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.alist button em{font-style:normal;font-family:var(--mono);font-size:12px;opacity:.7}
+input[type=search]{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--ink);font:inherit}
+.prof{display:flex;flex-direction:column;gap:16px;min-width:0}
+.pnm{font-size:clamp(38px,7vw,64px);overflow-wrap:anywhere}
+.mini{display:grid;grid-template-columns:repeat(auto-fit,minmax(132px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.mini div{background:var(--surface);padding:12px 14px;display:flex;flex-direction:column;gap:3px}
+.mini .big{font-size:32px}
+.prof .mini{grid-template-columns:repeat(4,minmax(0,1fr))}
+@media(max-width:600px){.prof .mini{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.foot{border-top:1px solid var(--line);padding-block:18px calc(28px);font-size:12px;color:var(--ink3);display:flex;flex-direction:column;gap:4px}
+.themebtn{font-family:var(--mono);font-size:11px;color:var(--ink3);text-decoration:underline;text-underline-offset:3px;align-self:flex-start}
+
+
+
+.rks{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px}
+.rks.rks4{grid-template-columns:repeat(2,minmax(0,1fr))}
+@media(max-width:700px){.rks.rks4{grid-template-columns:minmax(0,1fr)}}
+.rk{background:var(--surface);border:1px solid var(--line);border-radius:6px;overflow:hidden;min-width:0}
+.rkh{padding:12px 14px;border-bottom:1px solid var(--line);display:flex;flex-direction:column;gap:2px}
+.rkh b{font-size:19px}
+.rk table{table-layout:fixed}
+.rk table td{padding:7px 10px;overflow:hidden}
+.rk td:first-child{width:38px}
+.rk td:last-child{width:128px}
+.rk .who .t{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rk .pos{font-size:17px}
+@media (max-width:760px){
+  .hero{grid-template-columns:1fr}
+  .split{grid-template-columns:1fr}
+  .alist{max-height:260px}
+  .hm,.pbar i,.pl i{display:none}
+  table.tl:not(.ext) th:last-child,table.tl:not(.ext) td:last-child{display:none}
+  .nav{width:100%}
+  .nav button{padding:10px 9px;font-size:13px;letter-spacing:.02em}
+  td:nth-child(2){white-space:normal}
+  .who{gap:7px}
+  th:first-child,td:first-child{width:30px;padding-left:4px;padding-right:4px}
+  .pos{font-size:18px}
+  td,th{padding:9px 8px}
+  h2{font-size:26px}
+}
+@media (prefers-reduced-motion:no-preference){.gp,.chips button,.seasons button{transition:background .12s,border-color .12s}}
+</style>
+
+<div class="wrap">
+<header class="top">
+  <div class="bar">
+    <div class="brand"><span class="lab" id="lab-sub"></span><b class="disp">Campeonato Last.fm</b></div>
+    <nav class="nav" role="tablist" aria-label="Secciones" id="nav"></nav>
+  </div>
+</header>
+<div class="seasons" id="seasons" role="group" aria-label="Temporada"></div>
+<main id="app"></main>
+<div class="foot" id="foot"></div>
+</div>
+
+<script>
+const D = /*__DATA__*/null;
+const MES=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+const MS=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+const cap=s=>s[0].toUpperCase()+s.slice(1);
+const fm=k=>cap(MES[+k.slice(5)-1])+' '+k.slice(0,4);
+const fms=k=>MS[+k.slice(5)-1]+' '+k.slice(2,4);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const keys=Object.keys(D.meses).sort();
+const years=[...new Set(keys.map(k=>k.slice(0,4)))];
+const lastYear=years[years.length-1];
+const open=new Set(D.abierto);
+const PT=[25,18,15,12,10,8,6,4,2,1];
+const rows=k=>D.meses[k];
+
+/* colores: los 8 artistas con más puntos históricos tienen color fijo; el resto va en gris */
+const allTot={}; keys.forEach(k=>rows(k).forEach(r=>allTot[r[0]]=(allTot[r[0]]||0)+r[3]));
+const ranked=Object.entries(allTot).sort((a,b)=>b[1]-a[1]).map(x=>x[0]);
+const slot={}; ranked.slice(0,8).forEach((a,i)=>slot[a]=i+1);
+const col=a=>slot[a]?`var(--s${slot[a]})`:'var(--sx)';
+const code=a=>({'La M.O.D.A.':'MOD','Second':'SEC','Sexy Zebras':'ZEB','Rufus T. Firefly':'RTF','Arde Bogotá':'ARD','Vetusta Morla':'VET','Shinova':'SHI','Izal':'IZA'}[a]||a.normalize('NFD').replace(/[^A-Za-z]/g,'').slice(0,3).toUpperCase());
+const dot=a=>`<i class="dot" style="background:${col(a)}"></i>`;
+
+function standings(ks){
+  const m={};
+  ks.forEach(k=>rows(k).forEach(([a,e,p,pt])=>{
+    const s=m[a]||(m[a]={a,pts:0,w:0,pod:0,gp:0,part:0,best:99,plays:0}); s.pts+=pt; s.part++; if(pt>0)s.gp++; s.plays+=e; if(p===1)s.w++; if(p<=3)s.pod++; if(p<s.best)s.best=p;}));
+  return Object.values(m).sort((x,y)=>y.pts-x.pts||y.w-x.w||y.pod-x.pod||x.a.localeCompare(y.a));
+}
+const titles={}; // campeones de temporadas completas
+years.forEach(y=>{ if(y!==lastYear){ const s=standings(keys.filter(k=>k.startsWith(y)))[0]; (titles[s.a]=titles[s.a]||[]).push(y);} });
+/* color extra: 2+ victorias o aparecer en la gráfica (top 6) de alguna temporada */
+{ const wins={}; keys.forEach(k=>{const w=rows(k)[0][0]; wins[w]=(wins[w]||0)+1});
+  const need=new Set(Object.keys(wins).filter(a=>wins[a]>=2));
+  years.forEach(y=>standings(keys.filter(k=>k.startsWith(y))).slice(0,6).forEach(s=>need.add(s.a)));
+  let n=9; ranked.filter(a=>need.has(a)&&!slot[a]).forEach(a=>{ if(n<=13) slot[a]=n++; }); }
+
+const S={tab:'temporada',year:lastYear,month:keys[keys.length-1],artist:ranked[0],showAll:false,table:false,off:{},ey:'total',eall:false};
+const E=D.escuchas;
+const fmtN=n=>String(n).replace(/\B(?=(\d{3})+(?!\d))/g,'.');
+const TABS=[['temporada','Temporada'],['resultados','Resultados'],['historico','Histórico'],['estadisticas','Estadísticas'],['escuchas','Escuchas'],['artistas','Artistas']];
+const $=id=>document.getElementById(id);
+
+function nav(){
+  $('nav').innerHTML=TABS.map(([id,t])=>`<button role="tab" aria-selected="${S.tab===id}" data-tab="${id}">${t}</button>`).join('');
+  const showY=S.tab==='temporada'||S.tab==='resultados';
+  $('seasons').hidden=!showY;
+  $('seasons').innerHTML=years.map(y=>`<button aria-pressed="${S.year===y}" data-year="${y}">${y}</button>`).join('');
+}
+function go(tab,patch){ Object.assign(S,patch||{},{tab}); try{history.replaceState(null,'','#'+tab)}catch(e){} render(); window.scrollTo({top:0}); }
+
+document.addEventListener('click',e=>{
+  const t=e.target.closest('[data-tab],[data-year],[data-month],[data-artist],[data-act],[data-ey]'); if(!t)return;
+  if(t.dataset.tab) go(t.dataset.tab);
+  else if(t.dataset.year){ S.year=t.dataset.year; const ks=keys.filter(k=>k.startsWith(S.year)); if(!ks.includes(S.month)) S.month=ks[ks.length-1]; S.showAll=false; render(); }
+  else if(t.dataset.month) go('resultados',{month:t.dataset.month,year:t.dataset.month.slice(0,4)});
+  else if(t.dataset.artist) go('artistas',{artist:t.dataset.artist});
+  else if(t.dataset.act==='all'){S.showAll=!S.showAll;render()}
+  else if(t.dataset.ey){S.ey=t.dataset.ey;render()}
+  else if(t.dataset.act==='eall'){S.eall=!S.eall;render()}
+  else if(t.dataset.act==='table'){S.table=!S.table;render()}
+  else if(t.dataset.act==='prev'||t.dataset.act==='next'){ const i=keys.indexOf(S.month)+(t.dataset.act==='next'?1:-1); if(keys[i]){S.month=keys[i];S.year=keys[i].slice(0,4);render()} }
+  else if(t.dataset.act==='theme'){ const r=document.documentElement; const dark=matchMedia('(prefers-color-scheme: dark)').matches; const cur=r.dataset.theme||(dark?'dark':'light'); r.dataset.theme=cur==='dark'?'light':'dark'; }
+});
+
+/* ---------- TEMPORADA ---------- */
+function viewTemporada(){
+  const y=S.year, ks=keys.filter(k=>k.startsWith(y)), st=standings(ks).filter(s=>s.pts>0), L=st[0], done=y!==lastYear;
+  const gpDone=ks.length;
+  const winners=new Set(ks.map(k=>rows(k)[0][0]));
+  let rec=[0,'',''];
+  ks.forEach(k=>rows(k).forEach(([a,e])=>{if(e>rec[0])rec=[e,a,k]}));
+  const gap=st[1]?L.pts-st[1].pts:L.pts;
+  const first=ks[0].slice(5)!=='01';
+  const hero=`<div class="hero">
+    <div class="lead"><span class="stripe" style="background:${col(L.a)}"></span>
+      <div style="display:flex;gap:8px;flex-wrap:wrap"><span class="pill inv">${done?'Campeón '+y:'Líder '+y}</span>${done?'':`<span class="pill">tras ${gpDone} GP</span>`}</div>
+      <div class="nm disp">${esc(L.a)}</div>
+      <div class="row"><div><div class="big">${L.pts}</div><span class="lab">puntos</span></div><div><div class="big">${L.w}</div><span class="lab">victorias</span></div><div><div class="big">${L.pod}</div><span class="lab">podios</span></div></div>
+    </div>
+    <div class="kpis">
+      <div class="kpi"><div class="big">${gpDone}</div><span class="lab">Grandes Premios</span><small>${first?'desde '+MES[+ks[0].slice(5)-1]:'enero a '+MES[+ks[ks.length-1].slice(5)-1]}${open.has(ks[ks.length-1])?' · el último es provisional':''}</small></div>
+      <div class="kpi"><div class="big">${winners.size}</div><span class="lab">Ganadores distintos</span><small>artistas con al menos un GP</small></div>
+      <div class="kpi"><div class="big">+${gap}</div><span class="lab">Ventaja del líder</span><small>${st[1]?'sobre '+esc(st[1].a):''}</small></div>
+      <div class="kpi"><div class="big">${rec[0]}</div><span class="lab">Récord de escuchas</span><small>${esc(rec[1])}, ${fm(rec[2]).toLowerCase()}</small></div>
+    </div></div>`;
+  const lim=S.showAll?st.length:Math.min(12,st.length), maxp=L.pts;
+  const tbl=`<div class="tw"><table><thead><tr><th>Pos</th><th>Artista</th><th>Puntos</th><th>Vic</th><th>Pod</th><th class="hm">Punt</th><th class="hm">Part</th><th class="hm">Dif</th></tr></thead><tbody>`+
+   st.slice(0,lim).map((s,i)=>`<tr class="click" data-artist="${esc(s.a)}" tabindex="0"><td class="pos">${i+1}</td><td><div class="who">${dot(s.a)}<span class="t">${esc(s.a)}</span></div></td>
+    <td><div class="pbar"><i style="width:${Math.max(2,s.pts/maxp*120)}px;background:${col(s.a)}"></i><b>${s.pts}</b></div></td><td>${s.w||'·'}</td><td>${s.pod||'·'}</td><td class="hm mut">${s.gp}</td><td class="hm mut">${s.part}</td><td class="hm mut">${i?'−'+(L.pts-s.pts):'·'}</td></tr>`).join('')+`</tbody></table></div>`+
+   (st.length>12?`<button class="linkbtn" data-act="all">${S.showAll?'Ver solo los 12 primeros':'Ver los '+st.length+' artistas que puntuaron'}</button>`:'');
+  const cal=`<div class="cal">`+ks.map(k=>{const r=rows(k),w=r[0]; return `<button class="gp" data-month="${k}" style="--c:${col(w[0])}"><span class="m"><span>${cap(MS[+k.slice(5)-1])}</span>${open.has(k)?'<span class="pill" style="font-size:9px;padding:1px 5px">prov.</span>':''}</span><span class="w">${esc(w[0])}</span><span class="e">${w[1]} escuchas</span></button>`}).join('')+`</div>`;
+  return `<section><div class="head"><h2 class="disp">Temporada ${y}</h2><p class="sub">${done?'Final':'En curso'} · ${y===years[0]?'datos desde julio de 2023':'puntuación de F1 por mes'}</p></div>${hero}</section>
+   <section><div class="head"><h2 class="disp">Clasificación</h2><p class="sub">25 · 18 · 15 · 12 · 10 · 8 · 6 · 4 · 2 · 1 a los diez más escuchados de cada mes</p></div>${tbl}</section>
+   <section><div class="head"><h2 class="disp">Evolución</h2><button class="linkbtn" data-act="table">${S.table?'Ver gráfica':'Ver como tabla'}</button></div><div class="chartbox" id="chart"></div></section>
+   <section><div class="head"><h2 class="disp">Calendario</h2><p class="sub">Ganador de cada Gran Premio. Pulsa uno para ver el resultado completo.</p></div>${cal}</section>`;
+}
+
+/* ---------- gráfica ---------- */
+let chartState=null;
+function seriesFor(y){
+  const ks=keys.filter(k=>k.startsWith(y)), st=standings(ks).slice(0,6);
+  const labels=['Inicio',...ks.map(k=>cap(MS[+k.slice(5)-1]))];
+  let gi=0; const series=st.map((s,i)=>{let c=0; const vals=[0]; ks.forEach(k=>{const r=rows(k).find(r=>r[0]===s.a); c+=r?r[3]:0; vals.push(c)}); return {name:s.a,vals,color:col(s.a),dash:slot[s.a]?'':(gi++%2?'5 4':'')}});
+  return {ks,labels,series};
+}
+function drawChart(){
+  const el=$('chart'); if(!el)return;
+  const {ks,labels,series}=seriesFor(S.year);
+  const vis=series.filter(s=>!S.off[s.name]);
+  const legend=`<div class="legend">`+series.map(s=>`<button aria-pressed="${!S.off[s.name]}" data-leg="${esc(s.name)}"><i style="background:${s.color}${s.dash?';background:repeating-linear-gradient(90deg,'+s.color+' 0 5px,transparent 5px 8px)':''}"></i>${esc(s.name)}</button>`).join('')+`</div>`;
+  if(S.table){
+    el.innerHTML=legend+`<div class="tw" style="border:0"><table><thead><tr><th>GP</th>${series.map(s=>`<th>${esc(s.name)}</th>`).join('')}</tr></thead><tbody>`+
+      labels.map((l,i)=>`<tr><td style="text-align:left;width:auto">${l}</td>${series.map(s=>`<td>${s.vals[i]}</td>`).join('')}</tr>`).join('')+`</tbody></table></div>`;
+    bindLegend(el); return;
+  }
+  const W=Math.max(280,el.clientWidth-28), H=W<520?300:380, wide=W>=640;
+  const m={l:36,r:wide?118:14,t:12,b:26}, iw=W-m.l-m.r, ih=H-m.t-m.b;
+  const maxV=Math.max(10,...vis.map(s=>s.vals[s.vals.length-1]));
+  const step=[10,20,25,50,100].find(s=>maxV/s<=6)||100, ymax=Math.ceil(maxV/step)*step;
+  const X=i=>m.l+iw*i/(labels.length-1), Y=v=>m.t+ih*(1-v/ymax);
+  let g='';
+  for(let v=0;v<=ymax;v+=step) g+=`<line x1="${m.l}" x2="${W-m.r}" y1="${Y(v)}" y2="${Y(v)}" stroke="var(--line)" stroke-width="1"/><text x="${m.l-8}" y="${Y(v)+4}" text-anchor="end">${v}</text>`;
+  const every=Math.ceil(labels.length/(W<520?6:14));
+  labels.forEach((l,i)=>{ if(i%every===0||i===labels.length-1) g+=`<text x="${X(i)}" y="${H-6}" text-anchor="middle">${l}</text>`});
+  let ends=[];
+  vis.forEach(s=>{
+    const d=s.vals.map((v,i)=>(i?'L':'M')+X(i).toFixed(1)+' '+Y(v).toFixed(1)).join(' ');
+    g+=`<path d="${d}" fill="none" stroke="${s.color}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"${s.dash?` stroke-dasharray="${s.dash}"`:''}/>`;
+    const ev=s.vals[s.vals.length-1]; g+=`<circle cx="${X(labels.length-1)}" cy="${Y(ev)}" r="4.5" fill="${s.color}" stroke="var(--surface)" stroke-width="2"/>`;
+    ends.push({s,y:Y(ev)});
+  });
+  if(wide){ ends.sort((a,b)=>a.y-b.y).slice(0,vis.length); let last=-99; ends.forEach(e=>{ e.ly=Math.max(e.y,last+15); last=e.ly; });
+    ends.slice(0,4).forEach(e=>{ g+=`<text class="ds" x="${W-m.r+12}" y="${e.ly+4}">${esc(e.s.name.length>16?e.s.name.slice(0,15)+'…':e.s.name)}</text>` }); }
+  g+=`<line id="xh" y1="${m.t}" y2="${m.t+ih}" stroke="var(--ink3)" stroke-dasharray="3 3" visibility="hidden"/><g id="hp"></g>`;
+  el.innerHTML=legend+`<svg id="svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="Puntos acumulados por Gran Premio. Usa Ver como tabla para los datos.">${g}</svg><div class="tip" id="tip" hidden></div>`;
+  bindLegend(el);
+  const svg=$('svg'), tip=$('tip'), xh=$('xh'), hp=$('hp');
+  chartState={X,Y,labels,vis,ks,m,W,H,iw};
+  function move(ev){
+    const r=svg.getBoundingClientRect(), px=(ev.clientX-r.left)*(W/r.width);
+    let i=Math.round((px-m.l)/iw*(labels.length-1)); i=Math.max(0,Math.min(labels.length-1,i));
+    xh.setAttribute('x1',X(i)); xh.setAttribute('x2',X(i)); xh.setAttribute('visibility','visible');
+    hp.innerHTML=vis.map(s=>`<circle cx="${X(i)}" cy="${Y(s.vals[i])}" r="4.5" fill="${s.color}" stroke="var(--surface)" stroke-width="2"/>`).join('');
+    const list=[...vis].sort((a,b)=>b.vals[i]-a.vals[i]);
+    const gpk=i?ks[i-1]:null;
+    tip.innerHTML=`<b>${gpk?fm(gpk):'Antes del primer GP'}</b>`+(gpk?`<div style="opacity:.75"><span>Ganó ${esc(rows(gpk)[0][0])}</span></div>`:'')+list.map(s=>`<div><span><i class="dot" style="background:${s.color}"></i>${esc(s.name)}</span><b style="display:inline;font-size:13px;margin:0">${s.vals[i]}</b></div>`).join('');
+    tip.hidden=false;
+    const bx=el.getBoundingClientRect(), tw=tip.offsetWidth, cx=r.left-bx.left+X(i)*(r.width/W);
+    tip.style.left=Math.max(6,Math.min(bx.width-tw-6,cx+14>bx.width-tw?cx-tw-14:cx+14))+'px'; tip.style.top=(r.top-bx.top+20)+'px';
+  }
+  svg.addEventListener('pointermove',move); svg.addEventListener('pointerdown',move);
+  svg.addEventListener('pointerleave',()=>{tip.hidden=true;xh.setAttribute('visibility','hidden');hp.innerHTML=''});
+}
+function bindLegend(el){ el.querySelectorAll('[data-leg]').forEach(b=>b.onclick=()=>{S.off[b.dataset.leg]=!S.off[b.dataset.leg]; drawChart()}); }
+
+/* ---------- RESULTADOS ---------- */
+function viewResultados(){
+  const y=S.year, ks=keys.filter(k=>k.startsWith(y)), k=S.month, r=rows(k), i=keys.indexOf(k), maxE=r[0][1];
+  const chips=`<div class="chips">`+ks.map(x=>`<button aria-pressed="${x===k}" data-month="${x}">${cap(MS[+x.slice(5)-1])}${open.has(x)?' ·':''}</button>`).join('')+`</div>`;
+  const tbl=`<div class="tw"><table><thead><tr><th>Pos</th><th>Artista</th><th>Escuchas</th><th>Puntos</th><th class="hm">Dif</th></tr></thead><tbody>`+
+    r.map((x,j)=>(x[2]===11?`<tr class="sepr"><td colspan="5">Participan sin puntuar · puestos 11 a 20</td></tr>`:'')+`<tr class="click${x[3]?'':' out'}" data-artist="${esc(x[0])}" tabindex="0"><td class="pos">${x[2]}</td><td><div class="who">${dot(x[0])}<span class="t">${esc(x[0])}</span>${x[4]?`<span class="tie" title="Empate a ${x[1]} escuchas con otro artista. Gana quien llegó antes a ese número.">=</span>`:''}</div></td>
+    <td><div class="pl"><i style="width:${Math.max(2,x[1]/maxE*140)}px;background:${col(x[0])}"></i><b style="font-weight:600;min-width:34px;text-align:right">${x[1]}</b></div></td><td>${x[3]?`<b class="disp" style="font-size:19px;font-stretch:75%">${x[3]}</b>`:'<span class="mut">·</span>'}</td><td class="hm mut">${j?'−'+(r[0][1]-x[1]):'·'}</td></tr>`).join('')+`</tbody></table></div>`;
+  const tot=r.reduce((s,x)=>s+x[1],0);
+  return `<section><div class="head"><h2 class="disp">${fm(k)}</h2><div class="navgp"><button data-act="prev" ${i===0?'disabled':''}>← Anterior</button><button data-act="next" ${i===keys.length-1?'disabled':''}>Siguiente →</button></div></div>
+   ${chips}
+   <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">${open.has(k)?'<span class="pill inv">Provisional · mes en curso</span>':'<span class="pill">Cerrado</span>'}<p class="sub">Ganó ${esc(r[0][0])} con ${r[0][1]} escuchas${r[1]?(r[0][1]===r[1][1]?`, empatado con ${esc(r[1][0])} y por delante por llegar antes`:`, a ${r[0][1]-r[1][1]} de ${esc(r[1][0])}`):''}.</p></div>
+   ${tbl}
+   <p class="sub">Participar en un GP es quedar entre los 20 más escuchados del mes; puntúan solo los 10 primeros. Las ${fmtN(tot)} escuchas de estos 20 artistas se cuentan en hora de Madrid. El símbolo = marca un empate resuelto por quién llegó antes a ese número.</p></section>`;
+}
+
+/* ---------- HISTÓRICO ---------- */
+function viewHistorico(){
+  const st=standings(keys).filter(s=>s.pts>0), tw=st[0];
+  const champs=years.map(y=>{const s=standings(keys.filter(k=>k.startsWith(y)))[0]; return `<div class="card" style="--c:${col(s.a)}"><span class="y">${y}${y===lastYear?' · líder':''}</span><div class="n disp">${esc(s.a)}</div><span class="sub">${s.pts} puntos · ${s.w} victorias</span></div>`}).join('');
+  const tbl=`<div class="tw"><table><thead><tr><th>Pos</th><th>Artista</th><th>Puntos</th><th>Vic</th><th>Pod</th><th class="hm">Punt</th><th class="hm">Part</th><th class="hm">Títulos</th></tr></thead><tbody>`+
+    st.slice(0,15).map((s,i)=>`<tr class="click" data-artist="${esc(s.a)}" tabindex="0"><td class="pos">${i+1}</td><td><div class="who">${dot(s.a)}<span class="t">${esc(s.a)}</span></div></td><td><div class="pbar"><i style="width:${Math.max(2,s.pts/tw.pts*120)}px;background:${col(s.a)}"></i><b>${s.pts}</b></div></td><td>${s.w||'·'}</td><td>${s.pod||'·'}</td><td class="hm mut">${s.gp}</td><td class="hm mut">${s.part}</td><td class="hm mut">${(titles[s.a]||[]).length||'·'}</td></tr>`).join('')+`</tbody></table></div>`;
+  // récords
+  let big=[0],marg=[0],tight=[999],maxes=[0];
+  keys.forEach(k=>{const r=rows(k); if(r[0][1]>big[0])big=[r[0][1],r[0][0],k]; const d=r[0][1]-(r[1]?r[1][1]:0); if(d>marg[0])marg=[d,r[0][0],k,r[1]&&r[1][0]]; if(!open.has(k)&&d<tight[0]+0&&d<tight[0])tight=[d,r[0][0],k,r[1][0]];});
+  const streak=(f)=>{let best=[0,''],cur=0,who='',start='';keys.forEach(k=>{const a=f(k); if(a&&a===who){cur++}else{cur=a?1:0;who=a;start=k} if(cur>best[0])best=[cur,a,start,k]});return best};
+  const ws=streak(k=>rows(k)[0][0]);
+  const all=[...new Set(keys.flatMap(k=>rows(k).map(r=>r[0])))]; let ps=[0,''], pa=[0,''];
+  all.forEach(a=>{let c=0,s='',c2=0,s2='';keys.forEach(k=>{const r=rows(k).find(r=>r[0]===a); if(r&&r[3]>0){if(!c)s=k;c++; if(c>ps[0])ps=[c,a,s,k]}else c=0; if(r){if(!c2)s2=k;c2++; if(c2>pa[0])pa=[c2,a,s2,k]}else c2=0})});
+  const seasonBest=years.flatMap(y=>standings(keys.filter(k=>k.startsWith(y))).slice(0,1).map(s=>[s.pts,s.a,y,keys.filter(k=>k.startsWith(y)).length])).sort((a,b)=>b[0]-a[0])[0];
+  const nW=new Set(keys.map(k=>rows(k)[0][0])).size;
+  const R=(v,t,d)=>`<div class="r"><span class="lab">${t}</span><div class="v">${v}</div><span class="d">${d}</span></div>`;
+  const recs=`<div class="rec">`+
+    R(big[0],'Más escuchas ganando un GP',`${esc(big[1])}, ${fm(big[2]).toLowerCase()}`)+
+    R('+'+marg[0],'Mayor ventaja sobre el 2.º',`${esc(marg[1])} sobre ${esc(marg[3]||'—')}, ${fm(marg[2]).toLowerCase()}`)+
+    R(tight[0]===0?'Empate':'+'+tight[0],'Victoria más ajustada',`${esc(tight[1])} sobre ${esc(tight[3])}, ${fm(tight[2]).toLowerCase()}`)+
+    R(ws[0]+' GP','Racha de victorias',`${esc(ws[1])}, de ${fms(ws[2])} a ${fms(ws[3])}`)+
+    R(ps[0]+' GP','Racha puntuando (top 10)',`${esc(ps[1])}, de ${fms(ps[2])} a ${fms(ps[3])}`)+
+    R(pa[0]+' GP','Racha participando (top 20)',`${esc(pa[1])}, de ${fms(pa[2])} a ${fms(pa[3])}`)+
+    R(seasonBest[0]+' pts','Mejor temporada',`${esc(seasonBest[1])} en ${seasonBest[2]}${seasonBest[2]===lastYear?' (en curso)':''}`)+
+    R(nW,'Ganadores distintos',`en ${keys.length} Grandes Premios`)+`</div>`;
+  const strip=`<div class="strip">`+keys.map(k=>{const w=rows(k)[0][0]; return `<button class="cell ${slot[w]?'s':'t'}" style="--c:${col(w)}" data-month="${k}" title="${fm(k)} · ${esc(w)}">${code(w)}<small>${fms(k)}</small></button>`}).join('')+`</div>`;
+  return `<section><div class="head"><h2 class="disp">Campeones</h2><p class="sub">${years.length} temporadas · ${keys.length} Grandes Premios desde ${fm(keys[0]).toLowerCase()}</p></div><div class="cards">${champs}</div></section>
+   <section><div class="head"><h2 class="disp">Clasificación histórica</h2><p class="sub">Suma de todos los puntos</p></div>${tbl}</section>
+   <section><div class="head"><h2 class="disp">Récords</h2></div>${recs}</section>
+   <section><div class="head"><h2 class="disp">Ganador de cada GP</h2><p class="sub">Llevan color los artistas con más puntos, los que han ganado al menos dos GP y los que han salido en la gráfica de alguna temporada; el resto va en gris con sus siglas.</p></div>${strip}</section>`;
+}
+
+/* ---------- ARTISTAS ---------- */
+let q='';
+function viewArtistas(){
+  const st=standings(keys), me=st.find(s=>s.a===S.artist)||st[0], a=me.a;
+  const list=st.filter(s=>s.a.toLowerCase().includes(q.toLowerCase()));
+  const side=`<div style="display:flex;flex-direction:column;gap:10px"><input type="search" id="q" placeholder="Buscar artista" aria-label="Buscar artista" value="${esc(q)}"><div class="alist">`+
+    list.map(s=>`<button data-artist="${esc(s.a)}" ${s.a===a?'aria-current="true"':''}>${dot(s.a)}<span class="t">${esc(s.a)}</span><em>${s.pts}</em></button>`).join('')+`</div></div>`;
+  const rank=st.filter(s=>s.pts>0).indexOf(me)+1, nPts=st.filter(s=>s.pts>0).length;
+  const per=years.map(y=>{const ks=keys.filter(k=>k.startsWith(y)), s=standings(ks), i=s.findIndex(x=>x.a===a); const x=s[i]; return x?{y,pos:x.pts>0?i+1:null,pts:x.pts,w:x.w,pod:x.pod,gp:x.gp,part:x.part,n:ks.length}:{y,n:ks.length}});
+  const cells=years.map(y=>`<div class="yl">${y}</div><div class="strip">`+keys.filter(k=>k.startsWith(y)).map(k=>{const r=rows(k).find(r=>r[0]===a); return r?`<button class="cell ${r[3]===0?'p':r[2]<=3?'m'+r[2]:'pt'}" data-month="${k}" title="${fm(k)}: P${r[2]}, ${r[1]} escuchas, ${r[3]} pts">P${r[2]}<small>${r[3]?r[3]+' pts':'sin pts'}</small></button>`:`<span class="cell empty" title="${fm(k)}: fuera del top 20">·<small>${cap(MS[+k.slice(5)-1])}</small></span>`}).join('')+`</div>`).join('');
+  const cnt=Array(21).fill(0); keys.forEach(k=>{const r=rows(k).find(r=>r[0]===a); if(r)cnt[r[2]]++});
+  const mx=Math.max(1,...cnt), cc=i=>i<=3?'var(--m'+i+')':i<=10?'var(--mp)':'var(--mx)';
+  const chart=`<div><div class="head"><h2 class="disp" style="font-size:24px">Posiciones</h2><p class="sub">Veces en cada puesto del GP, de 1.º a 20.º</p></div><div class="pbars" role="img" aria-label="Veces en cada posición">`+
+    cnt.slice(1).map((n,i)=>`<div class="pb" title="${n} ${n===1?'vez':'veces'} en P${i+1}"><span class="v">${n||''}</span><span class="b" style="height:${n?Math.max(4,n/mx*100):0}%;background:${cc(i+1)}"></span><span class="x">${i+1}</span></div>`).join('')+`</div></div>`;
+  const t=titles[a]||[];
+  const ps=keys.map(k=>{const r=rows(k).find(r=>r[0]===a);return r?r[2]:null}).filter(x=>x), avg=ps.length?(ps.reduce((u,v)=>u+v,0)/ps.length).toFixed(1).replace('.',','):'·';
+  const prof=`<div class="prof"><div><span class="lab">${rank?rank+'.º en la clasificación histórica':'Participa en GP, pero aún no ha puntuado'}</span><div class="pnm disp" style="border-left:8px solid ${col(a)};padding-left:14px">${esc(a)}</div></div>
+    <div class="mini"><div><span class="big">${me.pts}</span><span class="lab">puntos</span></div><div><span class="big">${me.w}</span><span class="lab">victorias</span></div><div><span class="big">${me.pod}</span><span class="lab">podios</span></div><div><span class="big">${me.gp}</span><span class="lab">GP puntuados</span></div><div><span class="big">${me.part}</span><span class="lab">participaciones</span></div><div><span class="big">P${me.best}</span><span class="lab">mejor puesto</span></div><div><span class="big">${avg}</span><span class="lab">puesto medio</span></div><div><span class="big">${t.length||'·'}</span><span class="lab">títulos${t.length?' ('+t.join(', ')+')':''}</span></div></div>
+    <div class="tw"><table><thead><tr><th>Año</th><th>Puesto</th><th>Puntos</th><th>Vic</th><th>Pod</th><th>Punt</th><th>Part</th></tr></thead><tbody>`+per.map(p=>`<tr><td style="text-align:left;width:auto" class="mono">${p.y}</td>${p.part==null?`<td style="text-align:right" class="mut">—</td><td colspan="5" class="mut">no participó</td>`:`<td style="text-align:right">${p.pos?p.pos+'.º':'—'}</td><td><b>${p.pts||'·'}</b></td><td>${p.w||'·'}</td><td>${p.pod||'·'}</td><td class="mut">${p.gp} de ${p.n}</td><td class="mut">${p.part} de ${p.n}</td>`}</tr>`).join('')+`</tbody></table></div>
+    ${chart}<div><div class="head"><h2 class="disp" style="font-size:24px">Mes a mes</h2><p class="sub">Puesto en cada GP. Oro, plata y bronce: podio. Verde: puntuó. Morado: participó sin puntuar. Punteado: fuera del top 20.</p></div>${cells}</div></div>`;
+  return `<section><div class="head"><h2 class="disp">Artistas</h2><p class="sub">${st.length} artistas han participado en algún GP; ${nPts} han puntuado</p></div><div class="split">${side}${prof}</div></section>`;
+}
+
+
+/* ---------- ESTADÍSTICAS ---------- */
+function rankBox(title,sub,items,fmt,asc){
+  items=items.filter(x=>asc||x.v>0).sort((a,b)=>(asc?a.v-b.v:b.v-a.v)||a.a.localeCompare(b.a)); const max=Math.max(1,...items.map(x=>x.v));
+  const top=items.slice(0,10);
+  return `<div class="rk"><div class="rkh"><b class="disp">${title}</b><span class="lab">${sub}</span></div><table><tbody>`+
+   top.map(x=>{const pos=1+items.filter(y=>asc?y.v<x.v:y.v>x.v).length; const same=items.filter(y=>y.v===x.v).length>1;
+    return `<tr class="click" data-artist="${esc(x.a)}" tabindex="0"><td class="pos" style="width:34px">${same?'<span title="Empatados">'+pos+'</span>':pos}</td><td><div class="who">${dot(x.a)}<span class="t">${esc(x.a)}</span>${x.n?`<span class="mut mono" style="font-size:11px">${x.n}</span>`:''}</div></td><td><div class="pl"><i style="width:${Math.max(2,(asc?(max-x.v+1)/(max+1):x.v/max)*70)}px;background:${col(x.a)}"></i><b style="min-width:40px;text-align:right">${fmt(x.v)}</b></div></td></tr>`}).join('')+`</tbody></table></div>`;
+}
+function monthTable(heads,rowsHtml){ return `<div class="tw"><table class="tl"><thead><tr>${heads.map((h,i)=>`<th${i===1?'':''}>${h}</th>`).join('')}</tr></thead><tbody>${rowsHtml}</tbody></table></div>`; }
+function viewEstadisticas(){
+  const st=standings(keys);
+  const winsBox=rankBox('Más victorias','GP ganados',st.map(s=>({a:s.a,v:s.w})),String);
+  const podBox=rankBox('Más podios','top 3',st.map(s=>({a:s.a,v:s.pod})),String);
+  const gpBox=rankBox('Más meses puntuados','entre los 10 primeros',st.map(s=>({a:s.a,v:s.gp})),String);
+  const partBox=rankBox('Más participaciones','entre los 20 primeros',st.map(s=>({a:s.a,v:s.part})),String);
+  const sinBox=rankBox('Más participaciones sin puntuar','puestos 11 a 20',st.map(s=>({a:s.a,v:s.part-s.gp})),String);
+  const efBox=rankBox('% de participaciones en que puntuó','mín. 8 participaciones',st.filter(s=>s.part>=8).map(s=>({a:s.a,v:Math.round(s.gp/s.part*1000)/10})),v=>v.toFixed(1).replace('.',',')+'%');
+  const ttBox=rankBox('Más campeonatos','temporadas ganadas',st.map(s=>({a:s.a,v:(titles[s.a]||[]).length,n:(titles[s.a]||[]).join(', ')})),String);
+  const pw=rankBox('% de victorias sobre meses puntuados','mín. 5 meses',st.filter(s=>s.gp>=5).map(s=>({a:s.a,v:Math.round(s.w/s.gp*1000)/10})),v=>v.toFixed(1).replace('.',',')+'%');
+  const pp=rankBox('% de victorias sobre podios','mín. 3 podios',st.filter(s=>s.pod>=3).map(s=>({a:s.a,v:Math.round(s.w/s.pod*1000)/10})),v=>v.toFixed(1).replace('.',',')+'%');
+  const nA=st.length, fp=(n,d)=>(n/d*100).toFixed(1).replace('.',',')+'%';
+  const kp=(n,l,sub)=>`<div><span class="big">${fp(n,nA)}</span><span class="lab">${l}</span><span class="mut mono" style="font-size:12px">${n} de ${nA} ${sub}</span></div>`;
+  const nCh=Object.keys(titles).length;
+  const kpis=`<div class="mini">${kp(st.filter(s=>s.gp>0).length,'Puntúan','artistas que participan')}${kp(st.filter(s=>s.pod>0).length,'Logran podio','artistas que participan')}${kp(st.filter(s=>s.w>0).length,'Logran victoria','artistas que participan')}${kp(nCh,'Ganan campeonato','artistas que participan')}</div>`;
+  const hist={}; keys.forEach(k=>rows(k).forEach(r=>(hist[r[0]]=hist[r[0]]||[]).push(r[2])));
+  const first=cond=>Object.entries(hist).map(([a,l])=>({a,v:l.findIndex(cond)})).filter(x=>x.v>=0);
+  const fP=first(p=>p<=10), fPo=first(p=>p<=3), fW=first(p=>p===1);
+  const nm=v=>v===0?'a la primera':v+(v===1?' GP antes':' GP antes');
+  const lateP=rankBox('Más tardaron en puntuar','participaciones previas',fP,String);
+  const latePo=rankBox('Más tardaron en el podio','participaciones previas',fPo,String);
+  const lateW=rankBox('Más tardaron en ganar','participaciones previas',fW,String);
+  const fastW=rankBox('Más rápidos en ganar','participaciones previas',fW,String,true);
+  const stillP=rankBox('Siguen sin puntuar','participaciones hasta ahora',st.filter(s=>s.gp===0).map(s=>({a:s.a,v:s.part})),String);
+  const stillPo=rankBox('Siguen sin podio','participaciones hasta ahora',st.filter(s=>s.pod===0).map(s=>({a:s.a,v:s.part})),String);
+  const stillW=rankBox('Siguen sin ganar','participaciones hasta ahora',st.filter(s=>s.w===0).map(s=>({a:s.a,v:s.part})),String);
+  const flat=[]; keys.forEach(k=>rows(k).forEach(r=>flat.push({k,a:r[0],e:r[1],p:r[2],pt:r[3],win:rows(k)[0],tie:r[4]})));
+  const mk=k=>`<td class="mut" style="text-align:left">${fm(k)}${open.has(k)?' <span class="pill" style="font-size:9px;padding:1px 5px">prov.</span>':''}</td>`;
+  const N=12;
+  const top=[...flat].filter(x=>x.p===1).sort((a,b)=>b.e-a.e||a.k.localeCompare(b.k)).slice(0,N);
+  const t1=monthTable(['#','Artista','Escuchas','Mes','Ventaja'],top.map((x,i)=>{const sec=rows(x.k)[1]; return `<tr class="click" data-month="${x.k}" tabindex="0"><td class="pos">${i+1}</td><td><div class="who">${dot(x.a)}<span class="t">${esc(x.a)}</span></div></td><td><b>${fmtN(x.e)}</b></td>${mk(x.k)}<td class="mut">${sec?'+'+(x.e-sec[1])+' sobre '+esc(sec[0]):'·'}</td></tr>`}).join(''));
+  const full=[...flat].filter(x=>x.k!==keys[0]&&!open.has(x.k));
+  const ext=Array.from({length:10},(_,i)=>{const l=full.filter(x=>x.p===i+1); const mx=[...l].sort((a,b)=>b.e-a.e||a.k.localeCompare(b.k))[0], mn=[...l].sort((a,b)=>a.e-b.e||a.k.localeCompare(b.k))[0]; return {p:i+1,mx,mn}});
+  const cellx=x=>`<td style="text-align:left"><div class="who">${dot(x.a)}<span class="t">${esc(x.a)}</span></div></td><td class="mut" style="text-align:left">${fm(x.k)}</td>`;
+  const tExt=`<div class="tw"><table class="tl ext"><thead><tr><th>Puesto</th><th>Pts</th><th>Más caro</th><th>Artista</th><th>Mes</th><th>Más barato</th><th>Artista</th><th>Mes</th></tr></thead><tbody>`+ext.map(r=>`<tr><td class="pos">${r.p}.º</td><td class="mut">${PT[r.p-1]}</td><td><b>${fmtN(r.mx.e)}</b></td>${cellx(r.mx)}<td><b>${fmtN(r.mn.e)}</b></td>${cellx(r.mn)}</tr>`).join('')+`</tbody></table></div>`;
+  const lost=[...flat].filter(x=>x.p>1).sort((a,b)=>b.e-a.e||a.k.localeCompare(b.k)).slice(0,N);
+  const t2=monthTable(['#','Artista','Escuchas','Mes','Puesto','Ganó'],lost.map((x,i)=>`<tr class="click" data-month="${x.k}" tabindex="0"><td class="pos">${i+1}</td><td><div class="who">${dot(x.a)}<span class="t">${esc(x.a)}</span></div></td><td><b>${fmtN(x.e)}</b></td>${mk(x.k)}<td>${x.p}.º</td><td class="mut">${esc(x.win[0])} con ${fmtN(x.win[1])}</td></tr>`).join(''));
+  const podCost=(p)=>[...flat].filter(x=>x.p===p).sort((a,b)=>b.e-a.e||a.k.localeCompare(b.k)).slice(0,N);
+  const cost=(p,label)=>monthTable(['#','Mes',label,'Artista','Lo logró'],podCost(p).map((x,i)=>{const w=rows(x.k)[0]; return `<tr class="click" data-month="${x.k}" tabindex="0"><td class="pos">${i+1}</td>${mk(x.k)}<td><b>${fmtN(x.e)}</b></td><td style="text-align:left"><div class="who">${dot(x.a)}<span class="t">${esc(x.a)}</span></div></td><td class="mut">${x.tie?'con desempate':'sin empate'}</td></tr>`}).join(''));
+  return `<section><div class="head"><h2 class="disp">Estadísticas</h2><p class="sub">Todos los Grandes Premios desde ${fm(keys[0]).toLowerCase()}</p></div>
+   ${kpis}<p class="sub" style="margin:8px 0 18px">De los ${nA} artistas que han participado en algún GP (top 20). Los campeonatos cuentan solo temporadas terminadas.</p>
+   <div class="rks">${winsBox}${podBox}${gpBox}${partBox}${sinBox}${efBox}${ttBox}${pw}${pp}</div>
+   <div class="head" style="margin-top:28px"><h2 class="disp" style="font-size:24px">Cuánto tardaron en conseguirlo</h2><p class="sub">Participaciones (GP entre los 20 primeros) antes de lograrlo por primera vez. Los más rápidos solo se muestran para la victoria: puntuar o hacer podio a la primera es lo habitual y deja demasiados empates.</p></div>
+   <div class="rks rks4">${lateP}${latePo}${lateW}${fastW}</div>
+   <div class="head" style="margin-top:28px"><h2 class="disp" style="font-size:24px">Todavía sin conseguirlo</h2><p class="sub">Artistas que aún no han logrado puntuar, hacer podio o ganar, ordenados por participaciones acumuladas.</p></div>
+   <div class="rks">${stillP}${stillPo}${stillW}</div>
+   <p class="sub">Los campeonatos cuentan solo temporadas terminadas (${years.filter(y=>y!==lastYear).join(', ')}). Participar en un GP es quedar entre los 20 más escuchados del mes y puntuar es quedar entre los 10 primeros. En los porcentajes hay un mínimo de meses para que un solo GP no cuente como el 100%.</p></section>
+   <section><div class="head"><h2 class="disp">Victorias con más escuchas</h2><p class="sub">Los GP ganados con las cifras más altas</p></div>${t1}</section>
+   <section><div class="head"><h2 class="disp">Más escuchas sin ganar</h2><p class="sub">Meses en los que un artista hizo muchas escuchas y aun así no fue el primero</p></div>${t2}</section>
+   <section><div class="head"><h2 class="disp">Podios más caros</h2><p class="sub">Escuchas que hicieron falta para ser tercero. Es lo que costó subir al podio ese mes.</p></div>${cost(3,'Escuchas del 3.º')}</section>
+   <section><div class="head"><h2 class="disp">Puntos más caros</h2><p class="sub">Escuchas del décimo puesto, el último que puntúa</p></div>${cost(10,'Escuchas del 10.º')}</section>
+   <section><div class="head"><h2 class="disp">Cada puesto, de más caro a más barato</h2><p class="sub">Escuchas necesarias en el mes más exigente y en el más flojo para cada puesto que puntúa. Se excluyen ${fm(keys[0]).toLowerCase()} (mes incompleto) y el mes en curso.</p></div>${tExt}</section>
+   <section><div class="head"><h2 class="disp">Participar más caro</h2><p class="sub">Escuchas del puesto 20, el último que cuenta como participar</p></div>${cost(20,'Escuchas del 20.º')}</section>`;
+}
+
+/* ---------- ESCUCHAS ---------- */
+function viewEscuchas(){
+  const ys=Object.keys(E.totalAnio).sort(), y=S.ey, isT=y==='total';
+  const tot=isT?E.total:E.totalAnio[y];
+  const list=E.artistas.map(([a,t,by])=>({a,v:isT?t:(by[y]||0),by})).filter(x=>x.v>0).sort((a,b)=>b.v-a.v);
+  const max=list[0].v, lim=S.eall?list.length:Math.min(25,list.length);
+  const chips=`<div class="chips"><button aria-pressed="${isT}" data-ey="total">Total</button>`+ys.map(x=>`<button aria-pressed="${y===x}" data-ey="${x}">${x}</button>`).join('')+`</div>`;
+  const yb=ys.map(x=>`<div class="kpi"><div class="big">${fmtN(E.totalAnio[x])}</div><span class="lab">escuchas en ${x}</span><small>${x===lastYear?'hasta el '+D.actualizado:(x===ys[0]?'desde julio':'año completo')}</small></div>`).join('');
+  const body=list.slice(0,lim).map((x,i)=>{const lnk=allTot[x.a]!==undefined; return `<tr${lnk?` class="click" data-artist="${esc(x.a)}" tabindex="0"`:''}><td class="pos">${i+1}</td><td><div class="who">${dot(x.a)}<span class="t">${esc(x.a)}</span></div></td><td><div class="pbar"><i style="width:${Math.max(2,x.v/max*150)}px;background:${col(x.a)}"></i><b>${fmtN(x.v)}</b></div></td><td class="mut">${(x.v/tot*100).toFixed(1).replace('.',',')}%</td>`+(isT?ys.map(z=>`<td class="hm mut">${x.by[z]?fmtN(x.by[z]):'·'}</td>`).join(''):'')+`</tr>`}).join('');
+  const shown=list.slice(0,lim).reduce((s,x)=>s+x.v,0);
+  const head=`<th>Pos</th><th>Artista</th><th>Escuchas</th><th>% ${isT?'total':'del año'}</th>`+(isT?ys.map(z=>`<th class="hm">${z}</th>`).join(''):'');
+  return `<section><div class="head"><h2 class="disp">Escuchas por artista</h2><p class="sub">Todas las escuchas de Last.fm, en hora de Madrid, no solo las del top 10</p></div>
+   <div class="kpis" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr))"><div class="kpi"><div class="big">${fmtN(E.total)}</div><span class="lab">escuchas totales</span><small>desde ${fm(keys[0]).toLowerCase()}</small></div>${yb}</div></section>
+   <section>${chips}
+   <div class="tw"><table><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table></div>
+   <p class="sub">${isT?'Total':'En '+y}: ${fmtN(tot)} escuchas. Los ${lim} primeros suman el ${(shown/tot*100).toFixed(1).replace('.',',')}%.</p>
+   ${list.length>25?`<button class="linkbtn" data-act="eall">${S.eall?'Ver solo los 25 primeros':'Ver los '+list.length+' artistas con más escuchas'}</button>`:''}</section>`;
+}
+
+function render(){
+  nav();
+  const v={temporada:viewTemporada,resultados:viewResultados,historico:viewHistorico,estadisticas:viewEstadisticas,escuchas:viewEscuchas,artistas:viewArtistas}[S.tab]();
+  const fs=$('app').querySelector('.alist'); const sc=fs?fs.scrollTop:0;
+  $('app').innerHTML=v;
+  const al=$('app').querySelector('.alist'); if(al){ al.scrollTop=sc; const c=al.querySelector('[aria-current]'); if(c&&!sc) al.scrollTop=Math.max(0,c.offsetTop-80); }
+  const qi=$('q'); if(qi) qi.oninput=()=>{q=qi.value; const p=qi.selectionStart; render(); const n=$('q'); n.focus(); n.setSelectionRange(p,p)};
+  document.querySelectorAll('tr.click').forEach(tr=>tr.onkeydown=e=>{if(e.key==='Enter')tr.click()});
+  if(S.tab==='temporada') drawChart();
+}
+$('lab-sub').textContent='Daniel_877 · '+fms(keys[0])+' – '+fms(keys[keys.length-1]);
+$('foot').innerHTML=`<span>Datos de Last.fm, agrupados por mes en hora de Madrid. Puntuación de F1 (25-18-15-12-10-8-6-4-2-1) a los diez artistas más escuchados de cada mes. Participan en el GP los veinte primeros.</span><span>Empate de escuchas: gana quien llegó antes a ese número. El mes en curso es provisional. Actualizado el ${D.actualizado}.</span><button class="themebtn" data-act="theme">Cambiar tema claro / oscuro</button>`;
+let rz; addEventListener('resize',()=>{clearTimeout(rz);rz=setTimeout(()=>{if(S.tab==='temporada')drawChart()},120)});
+const h=location.hash.slice(1); if(TABS.some(t=>t[0]===h)) S.tab=h;
+render();
+</script>
